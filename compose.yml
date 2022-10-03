@@ -1,0 +1,42 @@
+services:
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: always
+    command: -H unix://var/run/docker.sock
+    ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/ds1019/containers/portainer_data:/data
+
+  nginx:
+    image: nginx
+    container_name: revproxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /mnt/ds1019/containers/nginx/conf.d:/etc/nginx/conf.d
+
+  gitlab:
+    image: gitlab/gitlab-ee
+    container_name: gitlab
+    hostname: docker1.home.local
+    shm_size: 256m
+    restart: always
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://docker1.home.local/'
+        registry_external_url 'https://docker1.home.local:5050'
+        gitlab_rails['lfs_enabled'] = true
+    ports:
+      - "8443:443"
+      - "8080:80"
+      - "8022:22"
+      - "5050:5050"
+    volumes:
+      - /mnt/ds1019/containers/gitlab/config:/etc/gitlab
+      - /mnt/ds1019/containers/gitlab/logs:/var/log/gitlab
+      - /mnt/ds1019/containers/gitlab/data:/var/opt/gitlab
