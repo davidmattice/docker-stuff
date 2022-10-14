@@ -21,6 +21,15 @@ Update the order of resolution to use the local DNS server first
 resolvectl dns <iface> <local dns host ip> <router>
 ```
 
+## Pull Containers
+
+```
+docker pull nginx:latest
+docker pull portainer/portainer-ce:latest
+docker pull gitlab/gitlab-ee:15.2.5-ee.0
+docker pull gitlab/gitlab-runner:alpine3.14-v15.2.2
+```
+
 ## SSH for Gitlab
 
 Client side configuration for gitlab access on a different port
