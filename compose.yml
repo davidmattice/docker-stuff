@@ -1,15 +1,4 @@
 services:
-  portainer:
-    image: portainer/portainer-ce
-    container_name: portainer
-    restart: always
-    command: -H unix://var/run/docker.sock
-    ports:
-      - "9443:9443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /mnt/ds1019/containers/portainer_data:/data
-
   nginx:
     image: nginx
     container_name: revproxy
@@ -19,18 +8,39 @@ services:
       - "443:443"
     volumes:
       - /mnt/ds1019/containers/nginx/conf.d:/etc/nginx/conf.d
+      - /mnt/ds1019/containers/nginx/logs:/var/log/nginx
+
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: always
+    depends_on:
+      - "nginx"
+    command: -H unix://var/run/docker.sock
+    ports:
+      - "9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /mnt/ds1019/containers/portainer_data:/data
 
   gitlab:
-    image: gitlab/gitlab-ee
+    image: gitlab/gitlab-ee:15.2.5-ee.0
     container_name: gitlab
-    hostname: docker1.home.local
     shm_size: 256m
     restart: always
+    depends_on:
+      - "nginx"
     environment:
       GITLAB_OMNIBUS_CONFIG: |
-        external_url 'https://docker1.home.local/'
-        registry_external_url 'https://docker1.home.local:5050'
+        external_url 'https://gitlab.home.local/'
+        registry_external_url 'https://gitlab.home.local:5050'
         gitlab_rails['lfs_enabled'] = true
+        gitlab_rails['gitlab_shell_ssh_port'] = 8022
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on",
+          "Host" => "gitlab.home.local"
+        }
     ports:
       - "8443:443"
       - "8080:80"
@@ -40,3 +50,13 @@ services:
       - /mnt/ds1019/containers/gitlab/config:/etc/gitlab
       - /mnt/ds1019/containers/gitlab/logs:/var/log/gitlab
       - /mnt/ds1019/containers/gitlab/data:/var/opt/gitlab
+
+  gitlab-runner:
+    image: gitlab/gitlab-runner:alpine3.14-v15.2.2
+    container_name: gitlab-runner
+    restart: always
+    depends_on:
+      - "gitlab"
+    volumes:
+      - /mnt/ds1019/containers/gitlab-runner/config:/etc/gitlab-runner
+      - /var/run/docker.sock:/var/run/docker.sock
