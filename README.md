@@ -14,6 +14,13 @@ mkdir -p /mnt/ds1019/containers/gitlab/data
 mkdir -p /mnt/ds1019/containers/gitlab-runner/config
 ```
 
+## Host DNS resolution
+
+Update the order of resolution to use the local DNS server first
+```
+resolvectl dns <iface> <local dns host ip> <router>
+```
+
 ## SSH for Gitlab
 
 Client side configuration for gitlab access on a different port
